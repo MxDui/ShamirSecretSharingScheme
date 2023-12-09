@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -66,23 +68,18 @@ public class Main {
         System.out.print("Contraseña para generar la clave de cifrado: ");
         String contraseña = scanner.nextLine();
 
-        // Generar clave de cifrado usando SHA256
-        byte[] claveCifrado = SHA256Hasher.hash(contraseña);
+        byte[] claveCifrado = MessageDigest.getInstance("SHA-256").digest(contraseña.getBytes(StandardCharsets.UTF_8));
 
-        // Leer el archivo claro
         byte[] datosClaro = FileUtils.readFile(archivoClaro);
 
-        // Cifrar los datos
         byte[] ivAndEncryptedData = AESCipher.encrypt(datosClaro, claveCifrado, iv);
 
-        // Guardar el archivo cifrado
-        FileUtils.writeFile("cifrado_" + archivoClaro, ivAndEncryptedData);
+        String archivoCifrado = archivoClaro + ".aes";
+        FileUtils.writeFile(archivoCifrado, ivAndEncryptedData);
 
-        // Crear y guardar las shares
         ShamirSecretSharing sss = new ShamirSecretSharing();
         List<BigInteger[]> shares = sss.createShares(new BigInteger(1, claveCifrado), n, t);
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(archivoEvaluaciones))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(archivoEvaluaciones + ".frg"))) {
             for (BigInteger[] share : shares) {
                 writer.write(share[0] + "," + share[1]);
                 writer.newLine();
@@ -119,7 +116,8 @@ public class Main {
 
             byte[] datosDescifrados = AESCipher.decrypt(encryptedData, claveCifrado.toByteArray(), iv);
 
-            FileUtils.writeFile("descifrado_" + archivoCifrado, datosDescifrados);
+            String nombreArchivoOriginal = archivoCifrado.replace(".aes", "");
+            FileUtils.writeFile(nombreArchivoOriginal, datosDescifrados);
 
             System.out.println("Archivo descifrado con éxito.");
         } catch (FileNotFoundException e) {
