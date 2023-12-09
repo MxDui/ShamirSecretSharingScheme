@@ -1,5 +1,9 @@
 # Manual de Usuario: Esquema de Secreto Compartido de Shamir
 
+## Integrantes del equipo
+
+| David Rivera Morales | 320176876 |
+
 ## Introducción
 
 Este manual describe la implementación y uso del Esquema de Secreto Compartido de Shamir, una herramienta diseñada para cifrar y descifrar archivos confidenciales mediante un enfoque colaborativo.
