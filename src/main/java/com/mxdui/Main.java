@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -52,41 +53,54 @@ public class Main {
      * @param iv      Initialization vector for AES encryption.
      * @throws Exception If an error occurs during encryption.
      */
-    private static void cifrar(Scanner scanner, byte[] iv) throws Exception {
-        System.out.print("Nombre del archivo para guardar las evaluaciones del polinomio: ");
-        String archivoEvaluaciones = scanner.nextLine();
+    private static void cifrar(Scanner scanner, byte[] iv) {
+        try {
+            System.out.print("Nombre del archivo para guardar las evaluaciones del polinomio: ");
+            String archivoEvaluaciones = scanner.nextLine();
 
-        System.out.print("Número total de evaluaciones (n > 2): ");
-        int n = Integer.parseInt(scanner.nextLine());
+            System.out.print("Número total de evaluaciones (n > 2): ");
+            int n = Integer.parseInt(scanner.nextLine());
 
-        System.out.print("Número mínimo de puntos para descifrar (1 < t <= n): ");
-        int t = Integer.parseInt(scanner.nextLine());
+            System.out.print("Número mínimo de puntos para descifrar (1 < t <= n): ");
+            int t = Integer.parseInt(scanner.nextLine());
 
-        System.out.print("Nombre del archivo con el documento claro: ");
-        String archivoClaro = scanner.nextLine();
+            System.out.print("Nombre del archivo con el documento claro: ");
+            String archivoClaro = scanner.nextLine();
 
-        System.out.print("Contraseña para generar la clave de cifrado: ");
-        String contraseña = scanner.nextLine();
+            System.out.print("Contraseña para generar la clave de cifrado: ");
+            String contraseña = scanner.nextLine();
 
-        byte[] claveCifrado = MessageDigest.getInstance("SHA-256").digest(contraseña.getBytes(StandardCharsets.UTF_8));
+            byte[] claveCifrado = MessageDigest.getInstance("SHA-256")
+                    .digest(contraseña.getBytes(StandardCharsets.UTF_8));
 
-        byte[] datosClaro = FileUtils.readFile(archivoClaro);
+            byte[] datosClaro = FileUtils.readFile(archivoClaro);
 
-        byte[] ivAndEncryptedData = AESCipher.encrypt(datosClaro, claveCifrado, iv);
+            byte[] ivAndEncryptedData = AESCipher.encrypt(datosClaro, claveCifrado, iv);
 
-        String archivoCifrado = archivoClaro + ".aes";
-        FileUtils.writeFile(archivoCifrado, ivAndEncryptedData);
+            String archivoCifrado = archivoClaro + ".aes";
+            FileUtils.writeFile(archivoCifrado, ivAndEncryptedData);
 
-        ShamirSecretSharing sss = new ShamirSecretSharing();
-        List<BigInteger[]> shares = sss.createShares(new BigInteger(1, claveCifrado), n, t);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(archivoEvaluaciones + ".frg"))) {
-            for (BigInteger[] share : shares) {
-                writer.write(share[0] + "," + share[1]);
-                writer.newLine();
+            ShamirSecretSharing sss = new ShamirSecretSharing();
+            List<BigInteger[]> shares = sss.createShares(new BigInteger(1, claveCifrado), n, t);
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(archivoEvaluaciones + ".frg"))) {
+                for (BigInteger[] share : shares) {
+                    writer.write(share[0] + "," + share[1]);
+                    writer.newLine();
+                }
             }
-        }
 
-        System.out.println("Archivo cifrado con éxito.");
+            System.out.println("Archivo cifrado con éxito.");
+        } catch (NumberFormatException e) {
+            System.err.println("Error de formato numérico: " + e.getMessage());
+        } catch (FileNotFoundException e) {
+            System.err.println("El archivo no se encontró: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Error al leer o escribir en el archivo: " + e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("Algoritmo de cifrado no disponible: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Ocurrió un error durante el cifrado: " + e.getMessage());
+        }
     }
 
     /**
